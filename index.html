@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PianoFlow CRM</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --panel-alt: #f8fafc;
+      --line: #e4e9f0;
+      --dark: #172033;
+      --muted: #667085;
+      --primary: #2563eb;
+      --primary-soft: #dbeafe;
+      --success: #16a34a;
+      --success-soft: #f0fdf4;
+      --warning: #ea580c;
+      --danger: #dc2626;
+      --gray: #eef2f7;
+      --text: #1f2937;
+      --shadow: 0 14px 40px rgba(15,23,42,.08);
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font: 14px/1.45 Arial, sans-serif; background: var(--bg); color: var(--dark); }
+    body { min-height: 100vh; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    input, select, textarea { border: 1px solid #d6dce5; border-radius: 9px; padding: 10px 12px; background: #fff; color: var(--text); }
+    textarea { min-height: 88px; resize: vertical; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); }
+    th { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+    .layout { display: flex; min-height: 100vh; }
+    .side { width: 225px; background: #111827; color: #fff; padding: 18px 12px; }
+    .brand { font-size: 23px; font-weight: 800; padding: 8px 10px 22px; }
+    .role { color: #94a3b8; font-size: 12px; padding: 0 10px 12px; }
+    .nav { display: flex; flex-direction: column; gap: 4px; }
+    .nav button { width: 100%; border: 0; background: transparent; color: #cbd5e1; text-align: left; padding: 11px 13px; border-radius: 9px; margin: 2px 0; }
+    .nav button.active, .nav button:hover { background: #273449; color: #fff; }
+
+    .main { flex: 1; min-width: 0; padding: 24px; }
+    .view { display: none; }
+    .view.active { display: block; }
+
+    .top { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+    .title { font-size: 28px; font-weight: 800; }
+    .sub, .muted { color: var(--muted); }
+    .btn { border: 0; border-radius: 9px; padding: 10px 14px; background: var(--primary); color: #fff; }
+    .btn.gray { background: #e9eef5; color: #1f2937; }
+    .btn.green { background: var(--success); }
+    .btn.orange { background: var(--warning); }
+    .btn.red { background: var(--danger); }
+    .btn.sm { padding: 7px 9px; font-size: 12px; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    .cards { display: grid; grid-template-columns: repeat(4, minmax(140px, 1fr)); gap: 14px; margin-bottom: 18px; }
+    .card, .panel, .student, .lessonrow { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+    .card { padding: 16px; }
+    .metric { font-size: 27px; font-weight: 800; margin-top: 5px; }
+    .panel { overflow: hidden; }
+    .panelhead { padding: 15px 17px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+
+    .calendar { display: grid; grid-template-columns: 65px repeat(5, minmax(155px, 1fr)); overflow: auto; }
+    .ch { background: #f8fafc; font-weight: 700; padding: 11px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .time { padding: 10px 6px; color: var(--muted); font-size: 12px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .slot { min-height: 82px; padding: 5px; border-right: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .lesson { min-height: 64px; padding: 8px; border-radius: 8px; background: var(--primary-soft); border-left: 4px solid var(--primary); font-size: 12px; }
+    .lesson.free { background: var(--success-soft); border-color: var(--success); color: #166534; }
+    .lesson strong { display: block; margin-bottom: 4px; }
+    .mini, .actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 7px; }
+
+    .studentgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+    .student { padding: 16px; }
+    .avatar { width: 42px; height: 42px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; }
+    .row { display: flex; align-items: center; gap: 11px; }
+    .search { width: 220px; }
+    .empty { text-align: center; padding: 35px; color: var(--muted); }
+
+    .modal, .login { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; padding: 15px; z-index: 20; }
+    .modal.show, .login.show { display: flex; }
+    .modalbox, .loginbox { width: min(560px, 100%); max-height: 92vh; overflow: auto; background: var(--panel); border-radius: 16px; }
+    .login { background: var(--bg); }
+    .loginbox { padding: 27px; box-shadow: var(--shadow); }
+
+    .form { display: grid; gap: 11px; padding: 17px; }
+    .form label { display: block; }
+    .form input, .form select, .form textarea { width: 100%; margin-top: 5px; }
+    .notice { padding: 11px 13px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 9px; color: #1e40af; margin: 14px 0; }
+
+    .lessonrow { padding: 14px 16px; margin-bottom: 10px; }
+    .lessonrow.free { background: var(--success-soft); border-color: #bbf7d0; }
+    .close { background: var(--gray); border: 0; border-radius: 8px; padding: 7px 10px; }
+
+    @media (max-width: 800px) {
+      .side { width: 62px; padding: 10px 6px; }
+      .brand { font-size: 0; }
+      .brand:after { content: "🎹"; font-size: 22px; }
+      .role { display: none; }
+      .nav button { font-size: 0; text-align: center; }
+      .nav button::first-letter { font-size: 18px; }
+      .main { padding: 13px; }
+      .cards { grid-template-columns: repeat(2, 1fr); }
+      .title { font-size: 22px; }
+      .calendar { grid-template-columns: 55px repeat(5, 145px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="loginScreen" class="login show">
+    <div class="loginbox">
+      <div style="font-size:26px;font-weight:800">🎹 PianoFlow</div>
+      <div class="sub">Расписание и личные кабинеты</div>
+      <div class="notice">Преподаватель видит всё. Ученик видит только свои уроки, свои оплаты и свободные окна.</div>
+      <div class="form" style="padding:0">
+        <label>Войти как
+          <select id="roleSelect">
+            <option value="teacher">Преподаватель</option>
+            <option value="student">Ученик</option>
+          </select>
+        </label>
+        <label id="pickWrap" style="display:none">Ученик
+          <select id="studentSelect"></select>
+        </label>
+        <button id="loginBtn" class="btn" type="button">Войти</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="layout" id="app" style="display:none">
+    <aside class="side">
+      <div class="brand">PianoFlow</div>
+      <div class="role" id="roleText"></div>
+      <div class="nav" id="nav"></div>
+    </aside>
+
+    <main class="main">
+      <section id="cal" class="view active">
+        <div class="top">
+          <div>
+            <div class="title">Расписание</div>
+            <div class="sub" id="weekLabel"></div>
+          </div>
+          <div>
+            <button class="btn gray" type="button" onclick="moveWeek(-1)">←</button>
+            <button class="btn gray" type="button" onclick="moveWeek(1)">→</button>
+            <button class="btn" type="button" onclick="openLessonModal()">+ Урок</button>
+          </div>
+        </div>
+
+        <div class="cards">
+          <div class="card">Сегодня<div class="metric" id="todayCount">0</div></div>
+          <div class="card">Ученики<div class="metric" id="studentsCount">0</div></div>
+          <div class="card">Свободные окна<div class="metric" id="freeSlotsCount">0</div></div>
+          <div class="card">Посещено<div class="metric" id="attendedCount">0</div></div>
+        </div>
+
+        <div class="panel">
+          <div class="panelhead"><b>Рабочая неделя</b><span class="muted">Отмена освобождает время</span></div>
+          <div id="calendar" class="calendar"></div>
+        </div>
+      </section>
+
+      <section id="students" class="view">
+        <div class="top">
+          <div class="title">Ученики</div>
+          <div>
+            <input id="search" class="search" placeholder="Поиск" />
+            <button class="btn" type="button" onclick="openStudentModal()">+ Ученик</button>
+          </div>
+        </div>
+        <div id="studentGrid" class="studentgrid"></div>
+      </section>
+
+      <section id="finance" class="view">
+        <div class="top">
+          <div class="title">Финансы</div>
+          <button class="btn" type="button" onclick="openPaymentModal()">+ Оплата</button>
+        </div>
+        <div class="cards">
+          <div class="card">Выручка<div class="metric" id="revenueTotal">0 ₽</div></div>
+          <div class="card">Оплат<div class="metric" id="paymentsCount">0</div></div>
+          <div class="card">Активные абонементы<div class="metric" id="activePackages">0</div></div>
+          <div class="card">Закончились<div class="metric" id="expiredPackages">0</div></div>
+        </div>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr><th>Дата</th><th>Ученик</th><th>Сумма</th><th>Назначение</th><th></th></tr>
+            </thead>
+            <tbody id="paymentTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="stats" class="view">
+        <div class="title">Статистика</div>
+        <div class="cards" style="margin-top:18px">
+          <div class="card">Уроков<div class="metric" id="allLessons">0</div></div>
+          <div class="card">Посещено<div class="metric" id="visitedLessons">0</div></div>
+          <div class="card">Отменено<div class="metric" id="cancelledLessons">0</div></div>
+          <div class="card">Посещаемость<div class="metric" id="visitRate">0%</div></div>
+        </div>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr><th>Ученик</th><th>Уроков</th><th>Посещено</th><th>Отменено</th><th>Осталось</th></tr>
+            </thead>
+            <tbody id="statsTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="recurring" class="view">
+        <div class="top">
+          <div>
+            <div class="title">Регулярное расписание</div>
+            <div class="sub">Правила расписания сохраняются при отмене отдельных уроков</div>
+          </div>
+          <button class="btn" type="button" onclick="openRecurringModal()">+ Регулярное расписание</button>
+        </div>
+        <div class="panel">
+          <table>
+            <thead>
+              <tr><th>Ученик</th><th>День</th><th>Время</th><th>Период</th><th>Статус</th><th></th></tr>
+            </thead>
+            <tbody id="recurringTable"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section id="settings" class="view">
+        <div class="title">Настройки</div>
+        <div class="panel" style="margin-top:18px">
+          <div class="form">
+            <label>Имя преподавателя<input id="teacherName" value="Иван" /></label>
+            <label>Длительность<select id="settingDuration"><option value="45">45</option><option value="60">60</option></select></label>
+            <label>Начало<input id="settingStart" type="time" value="09:00" /></label>
+            <label>Конец<input id="settingEnd" type="time" value="21:00" /></label>
+            <button class="btn" type="button" onclick="saveSettings()">Сохранить</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="my" class="view">
+        <div class="top">
+          <div>
+            <div class="title">Мой кабинет</div>
+            <div class="sub">Только ваши данные</div>
+          </div>
+          <div class="row">
+            <span class="avatar" id="myAvatar">A</span>
+            <b id="myName">Ученик</b>
+          </div>
+        </div>
+
+        <div class="cards">
+          <div class="card">Предстоящих уроков<div class="metric" id="myLessonsCount">0</div></div>
+          <div class="card">Осталось<div class="metric" id="myRemaining">0</div></div>
+          <div class="card">Оплачено<div class="metric" id="myPaidTotal">0 ₽</div></div>
+          <div class="card">Свободных окон<div class="metric" id="myFreeSlots">0</div></div>
+        </div>
+
+        <div class="notice">Расписание других учеников, их имена и оплаты вам не показываются.</div>
+        <div id="myLessonsList"></div>
+      </section>
+
+      <section id="freeView" class="view">
+        <div class="title">Свободные окна</div>
+        <div class="sub" style="margin:6px 0 16px">Ближайшая рабочая неделя</div>
+        <div id="freeSlotsList"></div>
+      </section>
+
+      <section id="myFinance" class="view">
+        <div class="title">Мои оплаты</div>
+        <div class="panel" style="margin-top:16px">
+          <table>
+            <thead>
+              <tr><th>Дата</th><th>Сумма</th><th>Назначение</th></tr>
+            </thead>
+            <tbody id="myPaymentsTable"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="modal" class="modal" onclick="if (event.target === this) closeModal();">
+    <div class="modalbox">
+      <div class="panelhead">
+        <b id="modalTitle">Модальное окно</b>
+        <button class="close" type="button" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const STORAGE_KEY = 'pianoflow_professional_v4';
+      const WEEKDAY_NAMES = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+
+      const defaultData = {
+        students: [
+          { id: 1, name: 'Кайшева', phone: '', price: 1000, packageSize: 4, remaining: 4, notes: '', active: true },
+          { id: 2, name: 'Кочоманова', phone: '', price: 1000, packageSize: 4, remaining: 3, notes: '', active: true },
+          { id: 3, name: 'Годунов', phone: '', price: 1000, packageSize: 4, remaining: 4, notes: '', active: true },
+          { id: 4, name: 'Анастасов', phone: '', price: 1000, packageSize: 4, remaining: 4, notes: '', active: true },
+          { id: 5, name: 'Подсвирова', phone: '', price: 1000, packageSize: 4, remaining: 2, notes: '', active: true },
+          { id: 6, name: 'Касымов', phone: '', price: 1000, packageSize: 4, remaining: 4, notes: '', active: true },
+          { id: 7, name: 'Гетманова', phone: '', price: 1000, packageSize: 4, remaining: 5, notes: '', active: true },
+          { id: 8, name: 'Сотириаду', phone: '', price: 1000, packageSize: 4, remaining: 1, notes: '', active: true }
+        ],
+        lessons: [
+          { id: 1, studentId: 1, date: '2026-10-01', time: '09:00', type: 'Урок фортепиано', note: 'Подготовка к концерту', status: 'scheduled', source: 'manual' },
+          { id: 2, studentId: 2, date: '2026-10-02', time: '11:00', type: 'Сольфеджио', note: '', status: 'attended', source: 'manual' },
+          { id: 3, studentId: 3, date: '2026-10-03', time: '13:00', type: 'Урок фортепиано', note: '', status: 'cancelled', source: 'manual' }
+        ],
+        payments: [
+          { id: 1, studentId: 1, date: '01.10.2026', sum: 1000, count: 4, reason: 'Абонемент' },
+          { id: 2, studentId: 2, date: '02.10.2026', sum: 1500, count: 4, reason: 'Разовое занятие' }
+        ],
+        recurring: [],
+        settings: { teacher: 'Иван', duration: 45, start: '09:00', end: '21:00' }
+      };
+
+      const state = {
+        students: [],
+        lessons: [],
+        payments: [],
+        recurring: [],
+        settings: { ...defaultData.settings },
+        role: null,
+        currentStudentId: null,
+        weekOffset: 0
+      };
+
+      const ui = {
+        loginScreen: document.getElementById('loginScreen'),
+        app: document.getElementById('app'),
+        roleSelect: document.getElementById('roleSelect'),
+        studentSelect: document.getElementById('studentSelect'),
+        pickWrap: document.getElementById('pickWrap'),
+        roleText: document.getElementById('roleText'),
+        nav: document.getElementById('nav'),
+        weekLabel: document.getElementById('weekLabel'),
+        calendar: document.getElementById('calendar'),
+        todayCount: document.getElementById('todayCount'),
+        studentsCount: document.getElementById('studentsCount'),
+        freeSlotsCount: document.getElementById('freeSlotsCount'),
+        attendedCount: document.getElementById('attendedCount'),
+        search: document.getElementById('search'),
+        studentGrid: document.getElementById('studentGrid'),
+        paymentTable: document.getElementById('paymentTable'),
+        revenueTotal: document.getElementById('revenueTotal'),
+        paymentsCount: document.getElementById('paymentsCount'),
+        activePackages: document.getElementById('activePackages'),
+        expiredPackages: document.getElementById('expiredPackages'),
+        allLessons: document.getElementById('allLessons'),
+        visitedLessons: document.getElementById('visitedLessons'),
+        cancelledLessons: document.getElementById('cancelledLessons'),
+        visitRate: document.getElementById('visitRate'),
+        statsTable: document.getElementById('statsTable'),
+        recurringTable: document.getElementById('recurringTable'),
+        teacherName: document.getElementById('teacherName'),
+        settingDuration: document.getElementById('settingDuration'),
+        settingStart: document.getElementById('settingStart'),
+        settingEnd: document.getElementById('settingEnd'),
+        myAvatar: document.getElementById('myAvatar'),
+        myName: document.getElementById('myName'),
+        myLessonsCount: document.getElementById('myLessonsCount'),
+        myRemaining: document.getElementById('myRemaining'),
+        myPaidTotal: document.getElementById('myPaidTotal'),
+        myFreeSlots: document.getElementById('myFreeSlots'),
+        myLessonsList: document.getElementById('myLessonsList'),
+        freeSlotsList: document.getElementById('freeSlotsList'),
+        myPaymentsTable: document.getElementById('myPaymentsTable'),
+        modal: document.getElementById('modal'),
+        modalTitle: document.getElementById('modalTitle'),
+        modalBody: document.getElementById('modalBody')
+      };
+
+      function isoDate(date) {
+        return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      }
+
+      function formatRuDate(date) {
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        return `${day}.${month}.${year}`;
+      }
+
+      function formatDateForInput(date) {
+        return isoDate(date);
+      }
+
+      function getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = (day === 0 ? -6 : 1 - day);
+        d.setHours(0, 0, 0, 0);
+        d.setDate(d.getDate() + diff);
+        return d;
+      }
+
+      function getWeekDates(anchorDate) {
+        const start = getWeekStart(anchorDate);
+        const dates = [];
+        for (let i = 0; i < 5; i += 1) {
+          const date = new Date(start);
+          date.setDate(start.getDate() + i);
+          dates.push(date);
+        }
+        return dates;
+      }
+
+      function getTimes() {
+        const startParts = state.settings.start.split(':').map(Number);
+        const endParts = state.settings.end.split(':').map(Number);
+        const slotDuration = Number(state.settings.duration) || 45;
+        const startMinutes = startParts[0] * 60 + startParts[1];
+        const endMinutes = endParts[0] * 60 + endParts[1];
+        const times = [];
+
+        for (let t = startMinutes; t < endMinutes; t += slotDuration) {
+          const hours = String(Math.floor(t / 60)).padStart(2, '0');
+          const minutes = String(t % 60).padStart(2, '0');
+          times.push(`${hours}:${minutes}`);
+        }
+        return times;
+      }
+
+      function findStudent(id) {
+        return state.students.find(student => Number(student.id) === Number(id)) || null;
+      }
+
+      function findLessonByDateTime(date, time, excludedId = null) {
+        return state.lessons.find(lesson => {
+          if (Number(lesson.id) === Number(excludedId)) return false;
+          return lesson.date === date && lesson.time === time && lesson.status !== 'cancelled';
+        }) || null;
+      }
+
+      function findPaymentForStudent(studentId) {
+        return state.payments.filter(payment => Number(payment.studentId) === Number(studentId));
+      }
+
+      function getCurrentUser() {
+        return state.role === 'student' ? findStudent(state.currentStudentId) : null;
+      }
+
+      function saveData() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({
+            students: state.students,
+            lessons: state.lessons,
+            payments: state.payments,
+            recurring: state.recurring,
+            settings: state.settings
+          }));
+        } catch (error) {
+          console.warn('localStorage unavailable', error);
+        }
+      }
+
+      function loadData() {
+        try {
+          const raw = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+          if (!raw) {
+            state.students = structuredClone(defaultData.students);
+            state.lessons = structuredClone(defaultData.lessons);
+            state.payments = structuredClone(defaultData.payments);
+            state.recurring = structuredClone(defaultData.recurring);
+            state.settings = { ...defaultData.settings };
+            return;
+          }
+          state.students = Array.isArray(raw.students) ? raw.students : structuredClone(defaultData.students);
+          state.lessons = Array.isArray(raw.lessons) ? raw.lessons : structuredClone(defaultData.lessons);
+          state.payments = Array.isArray(raw.payments) ? raw.payments : structuredClone(defaultData.payments);
+          state.recurring = Array.isArray(raw.recurring) ? raw.recurring : [];
+          state.settings = { ...defaultData.settings, ...(raw.settings || {}) };
+        } catch (error) {
+          console.warn('Could not load stored data', error);
+          state.students = structuredClone(defaultData.students);
+          state.lessons = structuredClone(defaultData.lessons);
+          state.payments = structuredClone(defaultData.payments);
+          state.recurring = structuredClone(defaultData.recurring);
+          state.settings = { ...defaultData.settings };
+        }
+      }
+
+      function applyRecurringRules() {
+        const oneYearAhead = new Date();
+        oneYearAhead.setDate(oneYearAhead.getDate() + 365);
+
+        state.recurring.forEach(rule => {
+          if (!rule.active) return;
+          if (!rule.startDate && !rule.endDate) return;
+
+          const fromDate = rule.startDate ? new Date(rule.startDate + 'T00:00:00') : new Date();
+          const toDate = rule.endDate ? new Date(rule.endDate + 'T00:00:00') : oneYearAhead;
+          const loopDate = new Date(fromDate);
+
+          while (loopDate <= toDate) {
+            const dateKey = isoDate(loopDate);
+            const weekday = loopDate.getDay();
+            const targetWeekday = Number(rule.weekday) || 1;
+            const normalizedTarget = targetWeekday === 7 ? 0 : targetWeekday;
+
+            if (weekday === normalizedTarget) {
+              const exists = state.lessons.some(lesson =>
+                Number(lesson.studentId) === Number(rule.studentId) &&
+                lesson.date === dateKey &&
+                lesson.time === rule.time &&
+                lesson.source === 'recurring' &&
+                Number(lesson.ruleId) === Number(rule.id) &&
+                lesson.status !== 'cancelled'
+              );
+
+              if (!exists) {
+                state.lessons.push({
+                  id: Date.now() + Math.random(),
+                  studentId: Number(rule.studentId),
+                  date: dateKey,
+                  time: rule.time,
+                  type: 'Урок фортепиано',
+                  note: 'Автоматически из регулярного расписания',
+                  status: 'scheduled',
+                  source: 'recurring',
+                  ruleId: Number(rule.id)
+                });
+              }
+            }
+            loopDate.setDate(loopDate.getDate() + 1);
+          }
+        });
+      }
+
+      function buildNav() {
+        const teacherNav = [
+          { id: 'cal', label: '📅 Расписание' },
+          { id: 'students', label: '👥 Ученики' },
+          { id: 'finance', label: '💳 Финансы' },
+          { id: 'stats', label: '📊 Статистика' },
+          { id: 'recurring', label: '🔁 Регулярное расписание' },
+          { id: 'settings', label: '⚙️ Настройки' }
+        ];
+
+        const studentNav = [
+          { id: 'my', label: '🏠 Мой кабинет' },
+          { id: 'freeView', label: '🕐 Свободные окна' },
+          { id: 'myFinance', label: '💳 Мои оплаты' }
+        ];
+
+        const items = state.role === 'teacher' ? teacherNav : studentNav;
+        ui.nav.innerHTML = items.map(item => `<button type="button" data-view="${item.id}" class="${item.id === 'cal' || item.id === 'my' ? 'active' : ''}">${item.label}</button>`).join('') + '<button type="button" onclick="logout()">🚪 Выйти</button>';
+
+        ui.nav.querySelectorAll('button[data-view]').forEach(button => {
+          button.addEventListener('click', () => {
+            showView(button.dataset.view);
+            ui.nav.querySelectorAll('button[data-view]').forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+          });
+        });
+      }
+
+      function showView(viewId) {
+        document.querySelectorAll('.view').forEach(view => view.classList.remove('active'));
+        const target = document.getElementById(viewId);
+        if (target) target.classList.add('active');
+      }
+
+      function setStudentOptions() {
+        ui.studentSelect.innerHTML = state.students.filter(student => student.active).map(student =>
+          `<option value="${student.id}">${student.name}</option>`
+        ).join('');
+      }
+
+      function switchRoleMode() {
+        const isStudent = ui.roleSelect.value === 'student';
+        ui.pickWrap.style.display = isStudent ? 'block' : 'none';
+      }
+
+      function syncSettingsForm() {
+        ui.teacherName.value = state.settings.teacher || 'Иван';
+        ui.settingDuration.value = String(state.settings.duration || 45);
+        ui.settingStart.value = state.settings.start || '09:00';
+        ui.settingEnd.value = state.settings.end || '21:00';
+      }
+
+      function login() {
+        const role = ui.roleSelect.value;
+        state.role = role;
+        state.currentStudentId = role === 'student' ? Number(ui.studentSelect.value) : null;
+
+        ui.loginScreen.classList.remove('show');
+        ui.app.style.display = 'flex';
+        ui.roleText.textContent = role === 'teacher' ? 'Преподаватель' : 'Личный кабинет';
+
+        buildNav();
+        renderAll();
+      }
+
+      function logout() {
+        state.role = null;
+        state.currentStudentId = null;
+        ui.app.style.display = 'none';
+        ui.loginScreen.classList.add('show');
+        ui.roleSelect.value = 'teacher';
+        switchRoleMode();
+      }
+
+      function getStudentLessons(studentId) {
+        return state.lessons.filter(lesson => Number(lesson.studentId) === Number(studentId) && lesson.status !== 'cancelled');
+      }
+
+      function getTeacherStats() {
+        const lessons = state.lessons.filter(lesson => lesson.status !== 'cancelled');
+        const attended = state.lessons.filter(lesson => lesson.status === 'attended');
+        const cancelled = state.lessons.filter(lesson => lesson.status === 'cancelled');
+        return {
+          total: state.lessons.length,
+          attended: attended.length,
+          cancelled: cancelled.length,
+          visible: lessons.length,
+          rate: lessons.length ? Math.round((attended.length / lessons.length) * 100) : 0
+        };
+      }
+
+      function renderCalendar() {
+        const baseDate = getWeekStart(new Date());
+        baseDate.setDate(baseDate.getDate() + state.weekOffset * 7);
+        const weekDates = getWeekDates(baseDate);
+
+        ui.weekLabel.textContent = `${formatRuDate(weekDates[0])} — ${formatRuDate(weekDates[weekDates.length - 1])}`;
+
+        let calendarHtml = '<div class="ch"></div>';
+        weekDates.forEach((date, index) => {
+          calendarHtml += `<div class="ch">${WEEKDAY_NAMES[index]} ${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}</div>`;
+        });
+
+        const times = getTimes();
+        let freeSlots = 0;
+        let attended = 0;
+
+        times.forEach(time => {
+          calendarHtml += `<div class="time">${time}</div>`;
+          weekDates.forEach(date => {
+            const dateKey = isoDate(date);
+            const lesson = findLessonByDateTime(dateKey, time);
+            if (lesson) {
+              if (lesson.status === 'attended') attended += 1;
+              const student = findStudent(lesson.studentId);
+              calendarHtml += `
+                <div class="slot">
+                  <div class="lesson ${lesson.status === 'cancelled' ? 'free' : ''}">
+                    <strong>${student ? student.name : '—'}</strong>
+                    ${lesson.type || 'Урок'}
+                    <div class="mini">
+                      <button class="btn sm gray" type="button" onclick="setLessonStatus(${lesson.id}, 'attended')">Был</button>
+                      <button class="btn sm orange" type="button" onclick="cancelLesson(${lesson.id})">Отмена</button>
+                      <button class="btn sm gray" type="button" onclick="editLesson(${lesson.id})">Изм.</button>
+                    </div>
+                  </div>
+                </div>
+              `;
+            } else {
+              freeSlots += 1;
+              calendarHtml += `
+                <div class="slot">
+                  <div class="lesson free" onclick="openLessonModal('${dateKey}', '${time}')">
+                    <strong>Свободно</strong>
+                    Записать
+                  </div>
+                </div>
+              `;
+            }
+          });
+        });
+
+        ui.calendar.innerHTML = calendarHtml;
+        ui.freeSlotsCount.textContent = String(freeSlots);
+        ui.attendedCount.textContent = String(attended);
+        ui.studentsCount.textContent = String(state.students.filter(student => student.active).length);
+        ui.todayCount.textContent = String(state.lessons.filter(lesson => lesson.date === isoDate(new Date()) && lesson.status !== 'cancelled').length);
+      }
+
+      function renderStudentList() {
+        const query = (ui.search.value || '').toLowerCase();
+        const rows = state.students.filter(student => student.active && student.name.toLowerCase().includes(query));
+
+        ui.studentGrid.innerHTML = rows.length ? rows.map(student => `
+          <div class="student">
+            <div class="row">
+              <div class="avatar">${student.name[0]}</div>
+              <div>
+                <b>${student.name}</b>
+                <div class="muted">${student.phone || 'Телефон не указан'}</div>
+              </div>
+            </div>
+            <p>Урок: <b>${student.price} ₽</b> · Абонемент: <b>${student.packageSize}</b> · Осталось: <b>${student.remaining}</b></p>
+            <div class="actions">
+              <button class="btn sm" type="button" onclick="openStudentModal(${student.id})">Изменить</button>
+              <button class="btn sm gray" type="button" onclick="openPaymentModal(${student.id})">Оплата</button>
+              <button class="btn sm gray" type="button" onclick="openLessonModal()">Записать</button>
+            </div>
+          </div>
+        `).join('') : '<div class="empty">Нет учеников</div>';
+      }
+
+      function renderFinance() {
+        const totalRevenue = state.payments.reduce((sum, payment) => sum + Number(payment.sum || 0), 0);
+        const activePackages = state.students.filter(student => student.active && Number(student.remaining) > 0).length;
+        const expiredPackages = state.students.filter(student => student.active && Number(student.remaining) <= 0).length;
+
+        ui.revenueTotal.textContent = `${totalRevenue} ₽`;
+        ui.paymentsCount.textContent = String(state.payments.length);
+        ui.activePackages.textContent = String(activePackages);
+        ui.expiredPackages.textContent = String(expiredPackages);
+
+        ui.paymentTable.innerHTML = state.payments.slice().reverse().map(payment => `
+          <tr>
+            <td>${payment.date}</td>
+            <td>${findStudent(payment.studentId)?.name || '—'}</td>
+            <td>${payment.sum} ₽</td>
+            <td>${payment.reason || '—'}</td>
+            <td><button class="btn sm gray" type="button" onclick="deletePayment(${payment.id})">Удалить</button></td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" class="empty">Нет оплат</td></tr>';
+      }
+
+      function renderStats() {
+        const stats = state.students.filter(student => student.active).map(student => {
+          const lessons = state.lessons.filter(lesson => Number(lesson.studentId) === Number(student.id));
+          const attended = lessons.filter(lesson => lesson.status === 'attended').length;
+          const cancelled = lessons.filter(lesson => lesson.status === 'cancelled').length;
+          return { student, lessons: lessons.length, attended, cancelled, remaining: Number(student.remaining || 0) };
+        });
+
+        const all = state.lessons.length;
+        const attended = state.lessons.filter(lesson => lesson.status === 'attended').length;
+        const cancelled = state.lessons.filter(lesson => lesson.status === 'cancelled').length;
+        const rate = all ? Math.round((attended / all) * 100) : 0;
+
+        ui.allLessons.textContent = String(all);
+        ui.visitedLessons.textContent = String(attended);
+        ui.cancelledLessons.textContent = String(cancelled);
+        ui.visitRate.textContent = `${rate}%`;
+
+        ui.statsTable.innerHTML = stats.map(item => `
+          <tr>
+            <td>${item.student.name}</td>
+            <td>${item.lessons}</td>
+            <td>${item.attended}</td>
+            <td>${item.cancelled}</td>
+            <td>${item.remaining}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="5" class="empty">Нет данных</td></tr>';
+      }
+
+      function renderRecurring() {
+        ui.recurringTable.innerHTML = state.recurring.length ? state.recurring.map(rule => {
+          const student = findStudent(rule.studentId);
+          const weekday = WEEKDAY_NAMES[(Number(rule.weekday) || 1) % 7];
+          const period = `${rule.startDate || '—'} → ${rule.endDate || 'без даты'}`;
+          return `
+            <tr>
+              <td>${student ? student.name : '—'}</td>
+              <td>${weekday}</td>
+              <td>${rule.time}</td>
+              <td>${period}</td>
+              <td>${rule.active ? 'Активно' : 'Приостановлено'}</td>
+              <td>
+                <button class="btn sm gray" type="button" onclick="toggleRecurring(${rule.id})">${rule.active ? 'Пауза' : 'Включить'}</button>
+              </td>
+            </tr>
+          `;
+        }).join('') : '<tr><td colspan="6" class="empty">Рег��лярного расписания пока нет</td></tr>';
+      }
+
+      function renderStudentPersonal() {
+        const student = getCurrentUser();
+        if (!student) return;
+
+        const myLessons = getStudentLessons(student.id).sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
+        const freeList = getFreeSlotsForStudent().slice(0, 40);
+        const myPayments = findPaymentForStudent(student.id).slice().reverse();
+
+        ui.myAvatar.textContent = student.name[0];
+        ui.myName.textContent = student.name;
+        ui.myLessonsCount.textContent = String(myLessons.length);
+        ui.myRemaining.textContent = String(student.remaining || 0);
+        ui.myPaidTotal.textContent = `${myPayments.reduce((sum, payment) => sum + Number(payment.sum || 0), 0)} ₽`;
+        ui.myFreeSlots.textContent = String(freeList.length);
+
+        ui.myLessonsList.innerHTML = myLessons.length ? myLessons.map(lesson => `
+          <div class="lessonrow">
+            <b>${formatRuDate(new Date(`${lesson.date}T00:00:00`))} · ${lesson.time}</b>
+            <div class="muted">${lesson.type || 'Урок'} · ${lesson.status === 'attended' ? 'Посещён' : 'Запланирован'}</div>
+          </div>
+        `).join('') : '<div class="empty">Уроков нет</div>';
+
+        ui.freeSlotsList.innerHTML = freeList.length ? freeList.map(slot => `
+          <div class="lessonrow free">
+            <b>${slot.label}</b>
+            <div class="actions"><button class="btn green sm" type="button" onclick="bookSelf('${slot.date}', '${slot.time}')">Записаться</button></div>
+          </div>
+        `).join('') : '<div class="empty">Свободных окон нет</div>';
+
+        ui.myPaymentsTable.innerHTML = myPayments.length ? myPayments.map(payment => `
+          <tr>
+            <td>${payment.date}</td>
+            <td>${payment.sum} ₽</td>
+            <td>${payment.reason || '—'}</td>
+          </tr>
+        `).join('') : '<tr><td colspan="3" class="empty">Нет оплат</td></tr>';
+      }
+
+      function getFreeSlotsForStudent() {
+        const start = getWeekStart(new Date());
+        const slots = [];
+        const weekDates = getWeekDates(start);
+
+        weekDates.forEach(date => {
+          const dateKey = isoDate(date);
+          getTimes().forEach(time => {
+            if (!findLessonByDateTime(dateKey, time)) {
+              slots.push({
+                date: dateKey,
+                time,
+                label: `${WEEKDAY_NAMES[date.getDay() === 0 ? 6 : date.getDay() - 1]} ${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')} · ${time}`
+              });
+            }
+          });
+        });
+
+        return slots;
+      }
+
+      function renderAll() {
+        applyRecurringRules();
+        renderCalendar();
+        renderStudentList();
+        renderFinance();
+        renderStats();
+        renderRecurring();
+        if (state.role === 'student') {
+          renderStudentPersonal();
+        }
+      }
+
+      function moveWeek(offset) {
+        state.weekOffset += offset;
+        renderCalendar();
+      }
+
+      function openLessonModal(dateValue = '', timeValue = '') {
+        const lessonId = null;
+        const allStudents = state.students.filter(student => student.active);
+        ui.modalTitle.textContent = 'Новый урок';
+        ui.modalBody.innerHTML = `
+          <div class="form">
+            <label>Ученик
+              <select id="lessonStudentSelect">
+                ${allStudents.map(student => `<option value="${student.id}">${student.name}</option>`).join('')}
+              </select>
+            </label>
+            <label>Дата<input id="lessonDate" type="date" value="${dateValue || formatDateForInput(new Date())}" /></label>
+            <label>Время<input id="lessonTime" type="time" value="${timeValue || state.settings.start}" /></label>
+            <label>Тип
+              <select id="lessonType">
+                <option>Урок фортепиано</option>
+                <option>Сольфеджио</option>
+                <option>Разовое занятие</option>
+              </select>
+            </label>
+            <label>Комментарий<textarea id="lessonNote"></textarea></label>
+            <button class="btn" type="button" onclick="createLesson()">Записать</button>
+          </div>
+        `;
+        ui.modal.classList.add('show');
+      }
+
+      function editLesson(id) {
+        const lesson = state.lessons.find(entry => Number(entry.id) === Number(id));
+        if (!lesson) return;
+
+        const allStudents = state.students.filter(student => student.active);
+        ui.modalTitle.textContent = 'Изменить урок';
+        ui.modalBody.innerHTML = `
+          <div class="form">
+            <label>Ученик
+              <select id="lessonStudentSelect">
+                ${allStudents.map(student => `<option value="${student.id}" ${Number(student.id) === Number(lesson.studentId) ? 'selected' : ''}>${student.name}</option>`).join('')}
+              </select>
+            </label>
+            <label>Дата<input id="lessonDate" type="date" value="${lesson.date}" /></label>
+            <label>Время<input id="lessonTime" type="time" value="${lesson.time}" /></label>
+            <label>Тип
+              <select id="lessonType">
+                <option ${lesson.type === 'Урок фортепиано' ? 'selected' : ''}>Урок фортепиано</option>
+                <option ${lesson.type === 'Сольфеджио' ? 'selected' : ''}>Сольфеджио</option>
+                <option ${lesson.type === 'Разовое занятие' ? 'selected' : ''}>Разовое занятие</option>
+              </select>
+            </label>
+            <label>Комментарий<textarea id="lessonNote">${lesson.note || ''}</textarea></label>
+            <button class="btn" type="button" onclick="saveLesson(${lesson.id})">Сохранить</button>
+          </div>
+        `;
+        ui.modal.classList.add('show');
+      }
+
+      function createLesson() {
+        const studentId = Number(document.getElementById('lessonStudentSelect').value);
+        const date = document.getElementById('lessonDate').value;
+        const time = document.getElementById('lessonTime').value;
+        const type = document.getElementById('lessonType').value;
+        const note = document.getElementById('lessonNote').value;
+
+        if (!studentId || !date || !time) {
+          alert('Заполните все поля');
+          return;
+        }
+
+        if (findLessonByDateTime(date, time)) {
+          alert('Время уже занято');
+          return;
+        }
+
+        state.lessons.push({
+          id: Date.now(),
+          studentId,
+          date,
+          time,
+          type,
+          note,
+          status: 'scheduled',
+          source: 'manual'
+        });
+
+        closeModal();
+        saveData();
+        renderAll();
+      }
+
+      function saveLesson(id) {
+        const lesson = state.lessons.find(entry => Number(entry.id) === Number(id));
+        if (!lesson) return;
+
+        const studentId = Number(document.getElementById('lessonStudentSelect').value);
+        const date = document.getElementById('lessonDate').value;
+        const time = document.getElementById('lessonTime').value;
+        const type = document.getElementById('lessonType').value;
+        const note = document.getElementById('lessonNote').value;
+
+        if (findLessonByDateTime(date, time, id)) {
+          alert('Время уже занято');
+          return;
+        }
+
+        lesson.studentId = studentId;
+        lesson.date = date;
+        lesson.time = time;
+        lesson.type = type;
+        lesson.note = note;
+
+        closeModal();
+        saveData();
+        renderAll();
+      }
+
+      function setLessonStatus(id, status) {
+        const lesson = state.lessons.find(entry => Number(entry.id) === Number(id));
+        if (!lesson) return;
+        lesson.status = status;
+        saveData();
+        renderAll();
+      }
+
+      function cancelLesson(id) {
+        const lesson = state.lessons.find(entry => Number(entry.id) === Number(id));
+        if (!lesson) return;
+        if (!confirm('Отменить урок? Окно станет свободным.')) return;
+        lesson.status = 'cancelled';
+        saveData();
+        renderAll();
+      }
+
+      function closeModal() {
+        ui.modal.classList.remove('show');
+        ui.modalBody.innerHTML = '';
+      }
+
+      function openStudentModal(studentId = null) {
+        const student = studentId ? findStudent(studentId) : null;
+        ui.modalTitle.textContent = student ? 'Изменить ученика' : 'Новый ученик';
+        ui.modalBody.innerHTML = `
+          <div class="form">
+            <label>Имя<input id="studentName" value="${student ? student.name : ''}" /></label>
+            <label>Телефон<input id="studentPhone" value="${student ? student.phone : ''}" /></label>
+            <label>Цена урока<input id="studentPrice" type="number" value="${student ? student.price : 1000}" /></label>
+            <label>Абонемент<select id="studentPackage">
+              <option value="4" ${student && Number(student.packageSize) === 4 ? 'selected' : ''}>4</option>
+              <option value="8" ${student && Number(student.packageSize) === 8 ? 'selected' : ''}>8</option>
+              <option value="12" ${student && Number(student.packageSize) === 12 ? 'selected' : ''}>12</option>
+            </select></label>
+            <label>Осталось<input id="studentRemaining" type="number" value="${student ? student.remaining : 4}" /></label>
+            <label>Заметки<textarea id="studentNotes">${student ? student.notes : ''}</textarea></label>
+            <label><input id="studentActive" type="checkbox" ${student && student.active === false ? '' : 'checked'} /> Активный</label>
+            <button class="btn" type="button" onclick="${student ? `saveStudent(${student.id})` : 'createStudent()'}">${student ? 'Сохранить' : 'Создать'}</button>
+          </div>
+        `;
+        ui.modal.classList.add('show');
+      }
+
+      function createStudent() {
+        const name = document.getElementById('studentName').value.trim();
+        if (!name) {
+          alert('Введите имя');
+          return;
+        }
+        state.students.push({
+          id: Date.now(),
+          name,
+          phone: document.getElementById('studentPhone').value,
+          price: Number(document.getElementById('studentPrice').value) || 1000,
+          packageSize: Number(document.getElementById('studentPackage').value) || 4,
+          remaining: Number(document.getElementById('studentRemaining').value) || 0,
+          notes: document.getElementById('studentNotes').value,
+          active: document.getElementById('studentActive').checked
+        });
+        setStudentOptions();
+        closeModal();
+        saveData();
+        renderAll();
+      }
+
+      function saveStudent(id) {
+        const student = findStudent(id);
+        if (!student) return;
+
+        student.name = document.getElementById('studentName').value.trim();
+        student.phone = document.getElementById('studentPhone').value;
+        student.price = Number(document.getElementById('studentPrice').value) || 1000;
+        student.packageSize = Number(document.getElementById('studentPackage').value) || 4;
+        student.remaining = Number(document.getElementById('studentRemaining').value) || 0;
+        student.notes = document.getElementById('studentNotes').value;
+        student.active = document.getElementById('studentActive').checked;
+
+        setStudentOptions();
+        closeModal();
+        saveData();
+        renderAll();
+      }
+
+      function openPaymentModal(studentId = null) {
+        ui.modalTitle.textContent = 'Новая оплата';
+        ui.modalBody.innerHTML = `
+          <div class="form">
+            <label>Ученик
+              <select id="paymentStudentSelect">
+                ${state.students.filter(student => student.active).map(student => `<option value="${student.id}" ${studentId && Number(student.id) === Number(studentId) ? 'selected' : ''}>${student.name}</option>`).join('')}
+              </select>
+            </label>
+            <label>Сумма<input id="paymentSum" type="number" value="1000" /></label>
+            <label>Количество уроков<input id="paymentCount" type="number" value="4" /></label>
+            <label>Назначение<input id="paymentReason" value="Абонемент" /></label>
+            <button class="btn" type="button" onclick="createPayment()">Сохранить</button>
+          </div>
+        `;
+        ui.modal.classList.add('show');
+      }
+
+      function createPayment() {
+        const studentId = Number(document.getElementById('paymentStudentSelect').value);
+        const payment = {
+          id: Date.now(),
+          studentId,
+          date: formatRuDate(new Date()),
+          sum: Number(document.getElementById('paymentSum').value) || 0,
+          count: Number(document.getElementById('paymentCount').value) || 0,
+          reason: document.getElementById('paymentReason').value || 'Абонемент'
+        };
+
+        const student = findStudent(studentId);
+        if (student) {
+          student.remaining = Number(student.remaining || 0) + Number(payment.count || 0);
+        }
+
+        state.payments.push(payment);
+        closeModal();
+        saveData();
+        renderAll();
+      }
+
+      function deletePayment(id) {
+        if (!confirm('Удалить оплату?')) return;
+        state.payments = state.payments.filter(payment => Number(payment.id) !== Number(id));
+        saveData();
+        renderAll();
+      }
+
+      function bookSelf(date, time) {
+        const student = getCurrentUser();
+        if (!student) return;
+        if (findLessonByDateTime(date, time)) {
+          alert('Окно уже занято');
+          return;
+        }
+        state.lessons.push({
+          id: Date.now(),
+          studentId: student.id,
+          date,
+          time,
+          type: 'Урок фортепиано',
+          note: 'Записан учеником',
+          status: 'scheduled',
+          source: 'manual'
+        });
+        saveData();
+        renderAll();
+        alert(`Вы записались на ${date.split('-').reverse().join('.')} в ${time}`);
+      }
+
+      function saveSettings() {
+        state.settings = {
+          teacher: ui.teacherName.value || 'Иван',
+          duration: Number(ui.settingDuration.value) || 45,
+          start: ui.settingStart.value || '09:00',
+          end: ui.settingEnd.value || '21:00'
+        };
+        saveData();
+        renderAll();
+        alert('Сохранено');
+      }
+
+      function openRecurringModal() {
+        ui.modalTitle.textContent = 'Новое регулярное расписание';
+        ui.modalBody.innerHTML = `
+          <div class="form">
+            <label>Ученик
+              <select id="recurringStudentSelect">
+                ${state.students.filter(student => student.active).map(student => `<option value="${student.id}">${student.name}</option>`).join('')}
+              </select>
+            </label>
+            <label>День<select id="recurringDay">
+              ${WEEKDAY_NAMES.map((day, index) => `<option value="${(index + 1) % 7 || 7}">${day}</option>`).join('')}
+            </select></label>
+            <label>Время<input id="recurringTime" type="time" value="${state.settings.start}" /></label>
+            <label>Начало<input id="recurringStart" type="date" value="${formatDateForInput(new Date())}" /></label>
+            <label>Окончание<input id="recurringEnd" type="date" /></label>
+            <button class="btn" type="button" onclick="createRecurring()">Сохранить</button>
+          </div>
+        `;
+        ui.modal.classList.add('show');
+      }
+
+      function createRecurring() {
+        const studentId = Number(document.getElementById('recurringStudentSelect').value);
+        const weekday = Number(document.getElementById('recurringDay').value) || 1;
+        const time = document.getElementById('recurringTime').value;
+        const startDate = document.getElementById('recurringStart').value;
+        const endDate = document.getElementById('recurringEnd').value;
+
+        state.recurring.push({
+          id: Date.now(),
+          studentId,
+          weekday,
+          time,
+          startDate,
+          endDate,
+          active: true,
+          duration: Number(state.settings.duration) || 45
+        });
+
+        closeModal();
+        saveData();
+        renderAll();
+      }
+
+      function toggleRecurring(id) {
+        const rule = state.recurring.find(entry => Number(entry.id) === Number(id));
+        if (!rule) return;
+        rule.active = !rule.active;
+        saveData();
+        renderAll();
+      }
+
+      function init() {
+        loadData();
+        setStudentOptions();
+        syncSettingsForm();
+        switchRoleMode();
+        buildNav();
+        ui.roleSelect.addEventListener('change', switchRoleMode);
+        ui.search.addEventListener('input', renderStudentList);
+        document.getElementById('loginBtn').addEventListener('click', login);
+        renderAll();
+      }
+
+      window.moveWeek = moveWeek;
+      window.logout = logout;
+      window.login = login;
+      window.showView = showView;
+      window.setLessonStatus = setLessonStatus;
+      window.cancelLesson = cancelLesson;
+      window.editLesson = editLesson;
+      window.createLesson = createLesson;
+      window.saveLesson = saveLesson;
+      window.openStudentModal = openStudentModal;
+      window.createStudent = createStudent;
+      window.saveStudent = saveStudent;
+      window.openPaymentModal = openPaymentModal;
+      window.createPayment = createPayment;
+      window.deletePayment = deletePayment;
+      window.bookSelf = bookSelf;
+      window.openRecurringModal = openRecurringModal;
+      window.createRecurring = createRecurring;
+      window.toggleRecurring = toggleRecurring;
+      window.saveSettings = saveSettings;
+      window.closeModal = closeModal;
+      window.openLessonModal = openLessonModal;
+      window.renderAll = renderAll;
+
+      init();
+    })();
+  </script>
+</body>
+</html>
